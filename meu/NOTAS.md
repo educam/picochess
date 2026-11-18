@@ -38,7 +38,7 @@
 5. **Os passos de instalação são separados** (engines, livros/jogos, serviços), sem uma checagem do tipo "o que está faltando?" na interface.
 
 ## Ideias de melhoria (para discutir/priorizar)
-### A. Assistente de configuração no browser ("Setup")
+### A. Assistente de configuração no browser ("Setup") ✅ implementado em `meu-dev`
 - Uma página `/setup` em etapas: 1) Tabuleiro (tipo + porta detectada + botão Testar, mostrando o FEN lido ao vivo), 2) Engine e nível, 3) Tempo e cor, 4) Tutor e voz, 5) Aparência.
 - Endpoint `GET /settings/ports` usando `serial.tools.list_ports.comports()` (USB/BT/COM no Linux, Mac e Windows) e BLE scan para Chessnut/iChessOne.
 - Aplicar a troca de board a quente (o backend já tenta isso em `action=eboard`) e mostrar o status sem reiniciar.
@@ -62,3 +62,12 @@
 - [ ] Rodar `install-books-games.sh` para ter livro e base de jogos
 - [ ] Rodar os testes: `venv/bin/tox -e unit`
 - [ ] Escolher a primeira melhoria (sugestão: A, com descoberta de portas e teste de conexão)
+
+## Item A: assistente `/setup` (implementado)
+- Acesso: `http://localhost:8080/setup`, menu Sistema → "🧭 Setup Wizard", ou o link na página `/settings`
+- Etapas: 1) E-board, 2) Jogador e engine, 3) Tempo, 4) PicoTutor, 5) Resumo e nova partida
+- E-board: portas detectadas (USB/BT/COM, com `/dev/cu.*` no Mac) e botão "Test connection". No DGT, o teste lê a posição real do tabuleiro (protocolo DGT, comando 0x42) e desenha um mini-tabuleiro. Se o tabuleiro já estiver em uso, mostra a posição ao vivo sem reabrir a porta
+- Salvar grava `board-type`/`dgt-port` no `picochess.ini` **sem reiniciar o computador** (o menu antigo dispara `REBOOT`, que reinicia a máquina inteira) e informa como reiniciar o PicoChess
+- As etapas 2 a 4 reutilizam as ações `/channel` existentes e aplicam as mudanças ao vivo
+- Arquivos: `web_setup.py`, handlers `Setup*` em `server.py`, `web/picoweb/templates/setup.html`, `tests/test_web_setup.py` (20 testes)
+- Bug pré-existente encontrado: trocar de engine faz o rating do jogador exibido voltar ao valor da inicialização (`args.pgn_elo` em `mainloop.update_elo_display`). O valor salvo no `.ini` fica correto

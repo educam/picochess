@@ -32,6 +32,7 @@ from typing import Any, Set, TypedDict
 import asyncio
 import platform
 from web_history import history_scope, reset_history, preserve, project_message
+import web_setup
 
 import chess  # type: ignore
 import chess.pgn as pgn  # type: ignore
@@ -2824,6 +2825,158 @@ class SettingsSaveHandler(ServerRequestHandler):
         self.write({"status": "ok"})
 
 
+class SetupPageHandler(tornado.web.RequestHandler):
+    """Browser setup wizard: e-board, engine, time control and PicoTutor."""
+
+    def initialize(self, theme="dark"):
+        self.theme = theme
+
+    def get(self):
+        if not _require_auth_if_remote(self, "Settings"):
+            return
+        self.render("web/picoweb/templates/setup.html", theme=self.theme)
+
+
+def _active_eboard_id() -> str:
+    eboard_type = ModeInfo.get_eboard_type()
+    return eboard_type.name.lower() if eboard_type is not None else "noeboard"
+
+
+class SetupStateHandler(ServerRequestHandler):
+    """Board catalogue, configured board, and the live state of the running board."""
+
+    def get(self):
+        if not _require_auth_if_remote(self, "Settings"):
+            return
+        try:
+            configured = web_setup.read_board_settings(_get_ini_path())
+        except Exception as exc:
+            logger.warning("setup: cannot read board settings: %s", exc)
+            configured = {"board_type": _active_eboard_id(), "port": ""}
+        shared = self.shared or {}
+        status = shared.get("eboard_status") or {}
+        self.set_header("Content-Type", "application/json")
+        self.write(
+            {
+                "board_types": web_setup.BOARD_TYPES,
+                "configured": configured,
+                "active": {
+                    "board_type": _active_eboard_id(),
+                    "status": status.get("eboard", ""),
+                    "message": status.get("msg", ""),
+                    "fen": shared.get("dgt_fen", ""),
+                },
+                "platform": platform.system(),
+                "restart_hint": web_setup.restart_hint(),
+            }
+        )
+
+
+class SetupPortsHandler(ServerRequestHandler):
+    async def get(self):
+        if not _require_auth_if_remote(self, "Settings"):
+            return
+        ports = await asyncio.to_thread(web_setup.list_serial_ports)
+        self.set_header("Content-Type", "application/json")
+        self.write({"ports": ports})
+
+
+class SetupProbeHandler(ServerRequestHandler):
+    """Test a board choice before it is saved."""
+
+    async def post(self):
+        if not _require_auth_if_remote(self, "Settings"):
+            return
+        board_type = web_setup.normalize_board_type(self.get_argument("type", ""))
+        port = web_setup.validate_port(self.get_argument("port", ""))
+        self.set_header("Content-Type", "application/json")
+        if board_type is None or port is None:
+            self.set_status(400)
+            self.write({"ok": False, "message": "Unknown board type or invalid port"})
+            return
+        info = web_setup.board_type_info(board_type) or {}
+        shared = self.shared or {}
+        status = (shared.get("eboard_status") or {}).get("eboard", "")
+
+        # The running driver owns its port: report its live state instead of reopening it.
+        if board_type == _active_eboard_id() and board_type != "noeboard" and status == "connected":
+            self.write(
+                {
+                    "ok": True,
+                    "live": True,
+                    "fen": shared.get("dgt_fen", ""),
+                    "message": "This board is connected and running now. Move a piece to see it here.",
+                }
+            )
+            return
+        if info.get("probe") == "none" or board_type == "noeboard":
+            self.write({"ok": True, "message": info.get("hint", "")})
+            return
+        if not port:
+            if info.get("port") == "required":
+                self.write({"ok": False, "message": "Choose the port the board is connected to."})
+            else:
+                self.write(
+                    {
+                        "ok": True,
+                        "message": "PicoChess will search for the board when it starts. "
+                        "Choose a port to test it now.",
+                    }
+                )
+            return
+        if info.get("probe") == "dgt":
+            result = await asyncio.to_thread(web_setup.probe_dgt_port, port)
+        else:
+            result = await asyncio.to_thread(web_setup.check_port_opens, port)
+        logger.info("setup probe %s on %s: %s", board_type, port, result.get("message"))
+        self.write(result)
+
+
+class SetupBoardHandler(ServerRequestHandler):
+    """Save the e-board choice. Board drivers start with PicoChess, so a restart applies it."""
+
+    def post(self):
+        if not _require_auth_if_remote(self, "Settings"):
+            return
+        board_type = web_setup.normalize_board_type(self.get_argument("type", ""))
+        port = web_setup.validate_port(self.get_argument("port", ""))
+        self.set_header("Content-Type", "application/json")
+        if board_type is None or port is None:
+            self.set_status(400)
+            self.write({"ok": False, "message": "Unknown board type or invalid port"})
+            return
+        info = web_setup.board_type_info(board_type) or {}
+        if info.get("port") == "required" and not port:
+            self.set_status(400)
+            self.write({"ok": False, "message": "This board needs a port."})
+            return
+        if info.get("port") == "unused":
+            port = ""
+        try:
+            result = web_setup.write_board_settings(_get_ini_path(), board_type, port)
+        except Exception as exc:
+            logger.warning("setup: cannot save board settings: %s", exc)
+            self.set_status(500)
+            self.write({"ok": False, "message": "Cannot write picochess.ini"})
+            return
+        dgtmenu = (self.shared or {}).get("dgtmenu")
+        if dgtmenu:
+            dgtmenu.set_board_type(EBoardType[board_type.upper()])
+        startup = (self.shared or {}).get("startup_board")
+        if startup:
+            restart_required = startup != {"board_type": board_type, "port": port}
+        else:
+            restart_required = result["changed"] or board_type != _active_eboard_id()
+        logger.info("setup: board-type=%s dgt-port=%r restart_required=%s", board_type, port, restart_required)
+        self.write(
+            {
+                "ok": True,
+                "restart_required": restart_required,
+                "message": web_setup.restart_hint() if restart_required else "Saved. This board is already in use.",
+            }
+        )
+
+
 class WifiSetupPageHandler(tornado.web.RequestHandler):
     def get(self):
         allow_unauth = _allow_onboard_without_auth()
@@ -2950,6 +3103,12 @@ class WebServer:
     ) -> tornado.web.Application:
         """define web pages and their handlers"""
         wsgi_app = tornado.wsgi.WSGIContainer(pw)
+        if "startup_board" not in shared:
+            # Board drivers only read these at start-up; the setup wizard compares against them.
+            try:
+                shared["startup_board"] = web_setup.read_board_settings(_get_ini_path())
+            except Exception as exc:
+                logger.debug("cannot read start-up board settings: %s", exc)
         handlers: list[Any] = [
             (
                 r"/",
@@ -2984,6 +3143,11 @@ class WebServer:
                 (r"/settings", SettingsPageHandler, dict(theme=theme)),
                 (r"/settings/data", SettingsDataHandler),
                 (r"/settings/save", SettingsSaveHandler, dict(shared=shared)),
+                (r"/setup", SetupPageHandler, dict(theme=theme)),
+                (r"/setup/state", SetupStateHandler, dict(shared=shared)),
+                (r"/setup/ports", SetupPortsHandler, dict(shared=shared)),
+                (r"/setup/probe", SetupProbeHandler, dict(shared=shared)),
+                (r"/setup/board", SetupBoardHandler, dict(shared=shared)),
             ]
         )
         if _supports_linux_host_integration():

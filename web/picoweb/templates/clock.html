@@ -3224,6 +3224,7 @@
             var _sysCatItems = [
                 { label:'⏻ Power',          value:'power' },
                 { label:'ℹ️ Info',           value:'info'  },
+                { label:'🧭 Setup Wizard',   value:'setup-wizard' },
                 { label:'📝 Picochess.ini',  value:'raw-settings' },
                 { label:'🔇 Phone Speaker',  value:'phone-speaker' },
                 { label:'🛠 Audio Backend',  value:'audio-backend' },
@@ -3263,6 +3264,10 @@
                     }
                     if (item.value === 'raw-settings') {
                         window.location.href = '/settings';
+                        return;
+                    }
+                    if (item.value === 'setup-wizard') {
+                        window.location.href = '/setup';
                         return;
                     }
                     navigateTo(function() { showSysCat(item.value); });
