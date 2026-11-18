@@ -43,7 +43,7 @@
 - Endpoint `GET /settings/ports` usando `serial.tools.list_ports.comports()` (USB/BT/COM no Linux, Mac e Windows) e BLE scan para Chessnut/iChessOne.
 - Aplicar a troca de board a quente (o backend já tenta isso em `action=eboard`) e mostrar o status sem reiniciar.
 
-### B. `/settings` agrupado e documentado
+### B. `/settings` agrupado e documentado ✅ implementado em `meu-dev`
 - Gerar um esquema a partir do `configuration.py` (argparse já tem `help`, `choices` e `default`) e renderizar por seções: Tabuleiro, Engine, Jogo, Tutor, Áudio, Web, Avançado.
 - Esconder chaves de exemplo e não habilitadas, validar no save (já existe `check-config.py`) e indicar quais mudanças pedem reinício.
 
@@ -71,3 +71,10 @@
 - As etapas 2 a 4 reutilizam as ações `/channel` existentes e aplicam as mudanças ao vivo
 - Arquivos: `web_setup.py`, handlers `Setup*` em `server.py`, `web/picoweb/templates/setup.html`, `tests/test_web_setup.py` (20 testes)
 - Bug pré-existente corrigido: trocar de engine fazia o rating exibido voltar ao valor da inicialização. Agora o `set_player` avisa o backend (evento `SET_PLAYER`)
+
+## Item B: `/settings` organizado (implementado)
+- As chaves aparecem em 9 seções (E-board e relógio, Engine, Jogo, PicoTutor, Voz, Web, Retro, Rede, Sistema), com busca, descrição, valor padrão e um selo de quando a mudança vale (`now` / `reload` / `restart`)
+- Por padrão a página mostra só as chaves ativas; "Show all available settings" revela as comentadas e as que nem existem no `.ini` (com o padrão já preenchido)
+- Ao salvar, o servidor valida tipos e opções (inteiro, número, true/false, listas) e devolve erro por chave; o arquivo não é alterado se houver erro
+- O botão mostra quantas mudanças existem, e a mensagem final lista o que exige reinício
+- Esquema gerado do `configuration.py` (`settings_schema.py`, rota `/settings/schema`). Testes em `tests/test_settings_schema.py`, que também validam os `.ini` de exemplo

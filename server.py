@@ -2708,6 +2708,27 @@ class SettingsDataHandler(ServerRequestHandler):
         self.write({"entries": payload})
 
 
+_SETTINGS_SCHEMA: dict | None = None
+
+
+def _settings_schema() -> dict:
+    """Settings descriptions for the web settings page, built once from the argument parser."""
+    global _SETTINGS_SCHEMA
+    if _SETTINGS_SCHEMA is None:
+        import settings_schema
+
+        _SETTINGS_SCHEMA = settings_schema.build_schema()
+    return _SETTINGS_SCHEMA
+
+
+class SettingsSchemaHandler(ServerRequestHandler):
+    def get(self):
+        if not _require_auth_if_remote(self, "Settings"):
+            return
+        self.set_header("Content-Type", "application/json")
+        self.write(_settings_schema())
+
+
 class SettingsSaveHandler(ServerRequestHandler):
     def initialize(self, shared=None):
         self.shared = shared
@@ -2725,6 +2746,19 @@ class SettingsSaveHandler(ServerRequestHandler):
         if not isinstance(entries, list):
             self.set_status(400)
             self.write({"error": "Invalid entries payload"})
+            return
+        try:
+            import settings_schema
+
+            invalid = settings_schema.validate_entries(
+                _settings_schema(), [entry for entry in entries if isinstance(entry, dict)]
+            )
+        except Exception as exc:  # never block saving because the schema cannot be built
+            logger.warning("settings validation skipped: %s", exc)
+            invalid = {}
+        if invalid:
+            self.set_status(400)
+            self.write({"error": "Some settings have invalid values", "errors": invalid})
             return
 
         ini_path, lines, _, _ = _load_ini_entries()
@@ -3145,6 +3179,7 @@ class WebServer:
             [
                 (r"/settings", SettingsPageHandler, dict(theme=theme)),
                 (r"/settings/data", SettingsDataHandler),
+                (r"/settings/schema", SettingsSchemaHandler),
                 (r"/settings/save", SettingsSaveHandler, dict(shared=shared)),
                 (r"/setup", SetupPageHandler, dict(theme=theme)),
                 (r"/setup/state", SetupStateHandler, dict(shared=shared)),

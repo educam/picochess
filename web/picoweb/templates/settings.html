@@ -170,6 +170,135 @@
                 font-size: 0.9em;
             }
         }
+        [hidden] {
+            display: none !important;
+        }
+        .setting-row input,
+        .setting-row select,
+        .settings-toolbar input {
+            box-sizing: border-box;
+        }
+        .settings-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.9rem;
+            align-items: center;
+            margin: 0.5rem 0;
+        }
+        .settings-toolbar input[type="search"] {
+            flex: 1 1 14rem;
+            min-width: 0;
+            padding: 0.45rem 0.6rem;
+        }
+        .toolbar-check {
+            display: inline-flex;
+            gap: 0.35rem;
+            align-items: center;
+        }
+        .primary-button {
+            background: var(--settings-button-active);
+            font-weight: 600;
+        }
+        .settings-note {
+            font-size: 0.92em;
+            margin: 0.4rem 0 0.8rem;
+        }
+        .badge {
+            display: inline-block;
+            font-size: 0.75em;
+            padding: 0.05rem 0.45rem;
+            border-radius: 0.7rem;
+            border: 0.0625rem solid var(--settings-border);
+            color: var(--settings-muted);
+            white-space: nowrap;
+            vertical-align: middle;
+        }
+        .badge-now { border-color: #2f9e5b; color: #2f9e5b; }
+        .badge-reload { border-color: var(--settings-focus); color: var(--settings-focus); }
+        .settings-section {
+            border: 0.0625rem solid var(--settings-border);
+            border-radius: 0.5rem;
+            background: var(--settings-surface);
+            margin-bottom: 0.75rem;
+        }
+        .settings-section > summary {
+            cursor: pointer;
+            padding: 0.6rem 0.8rem;
+            font-weight: 600;
+            list-style-position: inside;
+        }
+        .settings-section > summary .section-count {
+            color: var(--settings-muted);
+            font-weight: 400;
+            font-size: 0.9em;
+        }
+        .settings-section .section-description {
+            margin: -0.2rem 0.8rem 0.4rem;
+            font-size: 0.9em;
+        }
+        .setting-row {
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr) minmax(0, 16rem);
+            gap: 0.3rem 0.7rem;
+            align-items: start;
+            padding: 0.55rem 0.8rem;
+            border-top: 0.0625rem solid var(--settings-border);
+        }
+        .setting-row.changed {
+            box-shadow: inset 0.2rem 0 0 var(--settings-focus);
+        }
+        .setting-row.invalid {
+            box-shadow: inset 0.2rem 0 0 #d33;
+        }
+        .setting-row.inactive .setting-name,
+        .setting-row.inactive .setting-value {
+            opacity: 0.65;
+        }
+        .setting-enabled {
+            margin-top: 0.3rem;
+        }
+        .setting-name {
+            font-family: ui-monospace, Menlo, Consolas, monospace;
+            font-weight: 600;
+            overflow-wrap: anywhere;
+        }
+        .setting-help,
+        .setting-default {
+            color: var(--settings-muted);
+            font-size: 0.88em;
+            margin-top: 0.15rem;
+            overflow-wrap: anywhere;
+        }
+        .setting-row .setting-value,
+        .setting-row .setting-key {
+            width: 100%;
+        }
+        .setting-error {
+            grid-column: 2 / -1;
+            color: #d33;
+            font-size: 0.9em;
+        }
+        .setting-error:empty {
+            display: none;
+        }
+        .settings-footer {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+        }
+        .settings-empty {
+            color: var(--settings-muted);
+            padding: 0.8rem;
+        }
+        @media (max-width: 640px) {
+            .setting-row {
+                grid-template-columns: auto minmax(0, 1fr);
+            }
+            .setting-row .setting-input {
+                grid-column: 2;
+            }
+        }
     </style>
 </head>
 
@@ -189,24 +318,20 @@
     <div id="status"></div>
 
     <div id="settings-panel" class="tab-panel active">
-        <p>Most changes take effect after the next restart. Web theme, pieces, and board theme apply on the next page load.</p>
-        <div style="margin-top: 10px; margin-bottom: 10px;">
-            <button type="button" id="saveBtnTop">Save</button>
+        <div class="settings-toolbar">
+            <input type="search" id="settingsSearch" placeholder="Search settings" aria-label="Search settings">
+            <label class="toolbar-check"><input type="checkbox" id="showAllSettings"> Show all available settings</label>
+            <button type="button" id="saveBtnTop" class="primary-button">Save</button>
         </div>
-        <table border="1" cellpadding="4" cellspacing="0" style="width:100%; table-layout:fixed;">
-            <thead>
-                <tr>
-                    <th>Enabled</th>
-                    <th>Key</th>
-                    <th>Value</th>
-                </tr>
-            </thead>
-            <tbody id="settings-body"></tbody>
-        </table>
-
-        <div style="margin-top: 10px;">
-            <button type="button" id="addRowBtn">Add setting</button>
-            <button type="button" id="saveBtn">Save</button>
+        <p class="settings-note">Settings are stored in picochess.ini. Each one shows when a change takes effect:
+            <span class="badge badge-now">now</span> on save,
+            <span class="badge badge-reload">reload</span> on the next page load,
+            <span class="badge badge-restart">restart</span> after PicoChess restarts.
+            Inactive settings use their default value.</p>
+        <div id="settings-body"></div>
+        <div class="settings-footer">
+            <button type="button" id="addRowBtn">Add custom setting</button>
+            <button type="button" id="saveBtn" class="primary-button">Save</button>
             <a href="/" class="back-link">Back to game</a>
         </div>
     </div>
@@ -369,7 +494,7 @@
                 })
                 .then(function () {
                     setStatus("Saved. Restart Picochess, then open the phone web page and tap Unmute.", false);
-                    loadSettings();
+                    loadSettings(true);
                 })
                 .catch(function (error) {
                     setStatus(error.message, true);
@@ -395,122 +520,340 @@
                 });
         }
 
-        function renderEntry(entry) {
-            var row = document.createElement("tr");
+        var settingsSchema = { sections: [], settings: {} };
+        var BADGE_TEXT = { now: "now", reload: "reload", restart: "restart" };
 
-            var enabledCell = document.createElement("td");
-            var enabledInput = document.createElement("input");
-            enabledInput.type = "checkbox";
-            enabledInput.checked = Boolean(entry.enabled);
-            enabledInput.className = "setting-enabled";
-            enabledCell.appendChild(enabledInput);
+        function schemaFor(key) {
+            return settingsSchema.settings[(key || "").trim().toLowerCase()] || null;
+        }
 
-            var keyCell = document.createElement("td");
-            if (entry.editableKey) {
-                var keyInput = document.createElement("input");
-                keyInput.type = "text";
-                keyInput.value = entry.key || "";
-                keyInput.size = 20;
-                keyInput.className = "setting-key";
-                keyCell.appendChild(keyInput);
-            } else {
-                keyCell.textContent = entry.key;
-            }
-            if (entry.help) {
-                row.title = entry.help;
-                keyCell.title = entry.help;
-            }
-            if (entry.help && isTouchDevice) {
-                var helpIcon = document.createElement("span");
-                helpIcon.textContent = "?";
-                helpIcon.className = "help-icon touch-only";
-                helpIcon.title = "Show help";
-                helpIcon.addEventListener("click", function () {
-                    var next = row.nextSibling;
-                    if (next && next.classList && next.classList.contains("help-row")) {
-                        next.parentNode.removeChild(next);
-                        return;
-                    }
-                    var helpRow = document.createElement("tr");
-                    helpRow.className = "help-row";
-                    var helpCell = document.createElement("td");
-                    helpCell.colSpan = 3;
-                    helpCell.textContent = entry.help;
-                    helpRow.appendChild(helpCell);
-                    row.parentNode.insertBefore(helpRow, row.nextSibling);
-                });
-                keyCell.appendChild(helpIcon);
-            }
-
-            var valueCell = document.createElement("td");
+        function buildValueInput(entry, schema) {
             var valueInput;
-            var options = selectOptionsForKey(entry.key);
+            var value = entry.value === undefined || entry.value === null ? "" : String(entry.value);
+            var options = null;
+            if (schema && schema.kind === "choice") {
+                options = schema.choices.slice();
+            } else if (schema && (schema.kind === "flag" || schema.kind === "bool")) {
+                options = ["true", "false"];
+            } else if (!schema) {
+                options = selectOptionsForKey(entry.key);
+                if (!options && isBooleanValue(value)) {
+                    options = ["true", "false"];
+                }
+            }
             if (options) {
+                var current = value.trim();
+                if (options.indexOf(current) < 0 && options.indexOf(current.toLowerCase()) >= 0) {
+                    current = current.toLowerCase();
+                }
+                if (current !== "" && options.indexOf(current) < 0) {
+                    options.unshift(current);
+                }
                 valueInput = document.createElement("select");
                 options.forEach(function (optionValue) {
                     var option = document.createElement("option");
                     option.value = optionValue;
-                    option.textContent = optionValue;
+                    option.textContent = optionValue === "" ? "(empty)" : optionValue;
                     valueInput.appendChild(option);
                 });
-                valueInput.value = (entry.value || "").trim().toLowerCase();
-            } else if (isBooleanValue(entry.value)) {
-                valueInput = document.createElement("select");
-                ["true", "false"].forEach(function (optionValue) {
-                    var option = document.createElement("option");
-                    option.value = optionValue;
-                    option.textContent = optionValue;
-                    valueInput.appendChild(option);
-                });
-                valueInput.value = entry.value.trim().toLowerCase();
+                valueInput.value = current;
             } else {
                 valueInput = document.createElement("input");
-                valueInput.type = "text";
-                valueInput.value = entry.value || "";
-                valueInput.size = 40;
+                valueInput.type = schema && schema.secret ? "password" : "text";
+                if (schema && (schema.kind === "int" || schema.kind === "float")) {
+                    valueInput.inputMode = schema.kind === "int" ? "numeric" : "decimal";
+                }
+                valueInput.autocomplete = "off";
+                valueInput.value = value;
             }
             valueInput.className = "setting-value";
-            valueCell.appendChild(valueInput);
+            valueInput.setAttribute("aria-label", entry.key ? entry.key + " value" : "value");
+            return valueInput;
+        }
 
-            row.appendChild(enabledCell);
-            row.appendChild(keyCell);
-            row.appendChild(valueCell);
-            row.dataset.key = entry.key;
+        function renderEntry(entry) {
+            var schema = entry.editableKey ? null : schemaFor(entry.key);
+            var row = document.createElement("div");
+            row.className = "setting-row";
+            row.dataset.key = entry.key || "";
+            row.dataset.originalValue = entry.value || "";
+            row.dataset.originalEnabled = entry.enabled ? "1" : "0";
+            row.dataset.inIni = entry.inIni === false ? "0" : "1";
             if (entry.editableKey) {
                 row.dataset.editableKey = "1";
             }
 
+            var enabledInput = document.createElement("input");
+            enabledInput.type = "checkbox";
+            enabledInput.checked = Boolean(entry.enabled);
+            enabledInput.className = "setting-enabled";
+            enabledInput.title = "Active: write this setting to picochess.ini";
+            enabledInput.setAttribute("aria-label", "Use " + (entry.key || "setting"));
+
+            var text = document.createElement("div");
+            if (entry.editableKey) {
+                var keyInput = document.createElement("input");
+                keyInput.type = "text";
+                keyInput.value = entry.key || "";
+                keyInput.placeholder = "setting-name";
+                keyInput.className = "setting-key";
+                keyInput.setAttribute("aria-label", "Setting name");
+                text.appendChild(keyInput);
+            } else {
+                var name = document.createElement("span");
+                name.className = "setting-name";
+                name.textContent = entry.key;
+                text.appendChild(name);
+                var applies = schema ? schema.applies : "restart";
+                var badge = document.createElement("span");
+                badge.className = "badge badge-" + applies;
+                badge.textContent = BADGE_TEXT[applies] || applies;
+                badge.title = applies === "restart" ? "Takes effect after PicoChess restarts"
+                    : applies === "reload" ? "Takes effect on the next page load" : "Takes effect when saved";
+                text.appendChild(document.createTextNode(" "));
+                text.appendChild(badge);
+                var helpText = (schema && schema.help) || entry.help || "";
+                if (helpText) {
+                    var help = document.createElement("div");
+                    help.className = "setting-help";
+                    help.textContent = helpText;
+                    text.appendChild(help);
+                }
+                if (schema && schema.default !== undefined && schema.default !== "") {
+                    var def = document.createElement("div");
+                    def.className = "setting-default";
+                    def.textContent = "Default: " + schema.default;
+                    text.appendChild(def);
+                }
+            }
+
+            var inputWrap = document.createElement("div");
+            inputWrap.className = "setting-input";
+            var valueInput = buildValueInput(entry, schema);
+            inputWrap.appendChild(valueInput);
+            // Compare against the value as the control shows it (for example "True" becomes "true").
+            row.dataset.originalValue = valueInput.value;
+
+            var error = document.createElement("div");
+            error.className = "setting-error";
+            error.setAttribute("role", "alert");
+
+            row.appendChild(enabledInput);
+            row.appendChild(text);
+            row.appendChild(inputWrap);
+            row.appendChild(error);
+
+            function refresh() {
+                row.classList.toggle("inactive", !enabledInput.checked);
+                row.classList.toggle("changed", rowChanged(row));
+                updateSaveButtons();
+            }
+            valueInput.addEventListener("input", function () {
+                if (!enabledInput.checked) {
+                    enabledInput.checked = true;
+                }
+                error.textContent = "";
+                row.classList.remove("invalid");
+                refresh();
+            });
+            valueInput.addEventListener("change", function () {
+                if (!enabledInput.checked) {
+                    enabledInput.checked = true;
+                }
+                refresh();
+            });
+            enabledInput.addEventListener("change", refresh);
+            refresh();
             return row;
         }
 
+        function rowValue(row) {
+            return row.querySelector(".setting-value").value;
+        }
+
+        function rowChanged(row) {
+            if (row.dataset.editableKey) {
+                return true;
+            }
+            var enabled = row.querySelector(".setting-enabled").checked;
+            if (row.dataset.inIni === "0") {
+                return enabled;
+            }
+            return enabled !== (row.dataset.originalEnabled === "1") ||
+                (enabled && rowValue(row) !== row.dataset.originalValue);
+        }
+
+        function changedRows() {
+            return Array.prototype.filter.call(document.querySelectorAll("#settings-body .setting-row"), rowChanged);
+        }
+
+        function updateSaveButtons() {
+            var count = changedRows().length;
+            ["saveBtnTop", "saveBtn"].forEach(function (id) {
+                document.getElementById(id).textContent = count ? "Save " + count + " change" + (count > 1 ? "s" : "") : "Save";
+            });
+        }
+
         function collectEntries() {
-            var rows = document.querySelectorAll("#settings-body tr");
+            var rows = document.querySelectorAll("#settings-body .setting-row");
             var entries = [];
             rows.forEach(function (row) {
                 var keyInput = row.querySelector(".setting-key");
                 var key = keyInput ? keyInput.value.trim() : row.dataset.key;
                 var enabled = row.querySelector(".setting-enabled").checked;
-                var valueInput = row.querySelector(".setting-value");
                 if (!key) {
                     return;
                 }
+                if (row.dataset.inIni === "0" && !enabled) {
+                    return;  // a default that was never written stays out of picochess.ini
+                }
                 entries.push({
                     key: key,
-                    value: valueInput.value,
+                    value: rowValue(row),
                     enabled: enabled
                 });
             });
             return entries;
         }
 
-        function addEmptyRow() {
-            var body = document.getElementById("settings-body");
-            var entry = { key: "", value: "", enabled: true, editableKey: true, help: "" };
-            var row = renderEntry(entry);
-            body.appendChild(row);
+        function sectionElement(section) {
+            var details = document.createElement("details");
+            details.className = "settings-section";
+            details.dataset.section = section.id;
+            details.open = true;
+            var summary = document.createElement("summary");
+            summary.textContent = section.title + " ";
+            var count = document.createElement("span");
+            count.className = "section-count";
+            summary.appendChild(count);
+            details.appendChild(summary);
+            if (section.description) {
+                var description = document.createElement("p");
+                description.className = "section-description";
+                description.textContent = section.description;
+                details.appendChild(description);
+            }
+            return details;
         }
 
-        function loadSettings() {
+        function addEmptyRow() {
+            var body = document.getElementById("settings-body");
+            var section = body.querySelector('[data-section="other"]');
+            if (!section) {
+                section = sectionElement({ id: "other", title: "Other settings", description: "" });
+                body.appendChild(section);
+            }
+            var row = renderEntry({ key: "", value: "", enabled: true, editableKey: true, help: "" });
+            section.appendChild(row);
+            section.open = true;
+            applyFilter();
+            row.querySelector(".setting-key").focus();
+        }
+
+        function applyFilter() {
+            var query = document.getElementById("settingsSearch").value.trim().toLowerCase();
+            var showAll = document.getElementById("showAllSettings").checked;
+            var anyVisible = false;
+            document.querySelectorAll("#settings-body .settings-section").forEach(function (section) {
+                var visible = 0;
+                section.querySelectorAll(".setting-row").forEach(function (row) {
+                    var active = row.querySelector(".setting-enabled").checked || row.dataset.originalEnabled === "1";
+                    var show = showAll || active || row.dataset.editableKey || rowChanged(row);
+                    if (show && query) {
+                        show = row.textContent.toLowerCase().indexOf(query) >= 0 ||
+                            (row.dataset.key || "").indexOf(query) >= 0;
+                    }
+                    row.hidden = !show;
+                    if (show) {
+                        visible += 1;
+                    }
+                });
+                section.hidden = visible === 0;
+                section.querySelector(".section-count").textContent = "(" + visible + ")";
+                if (query && visible) {
+                    section.open = true;
+                }
+                anyVisible = anyVisible || visible > 0;
+            });
+            var empty = document.getElementById("settings-empty");
+            if (!anyVisible) {
+                if (!empty) {
+                    empty = document.createElement("p");
+                    empty.id = "settings-empty";
+                    empty.className = "settings-empty";
+                    document.getElementById("settings-body").appendChild(empty);
+                }
+                empty.textContent = query ? "No settings match \"" + query + "\"." : "No active settings. Tick \"Show all available settings\".";
+            } else if (empty) {
+                empty.parentNode.removeChild(empty);
+            }
+        }
+
+        function renderSettings(entries) {
+            var body = document.getElementById("settings-body");
+            body.innerHTML = "";
+            var sections = {};
+            var order = (settingsSchema.sections || []).slice();
+            if (!order.some(function (s) { return s.id === "other"; })) {
+                order.push({ id: "other", title: "Other settings", description: "" });
+            }
+            order.forEach(function (section) {
+                sections[section.id] = sectionElement(section);
+                body.appendChild(sections[section.id]);
+            });
+            var seen = {};
+            entries.forEach(function (entry) {
+                seen[entry.key] = true;
+                var schema = schemaFor(entry.key);
+                var target = sections[schema ? schema.section : "other"] || sections.other;
+                target.appendChild(renderEntry(entry));
+            });
+            // Known settings that picochess.ini does not mention yet: offered with their defaults.
+            Object.keys(settingsSchema.settings || {}).forEach(function (key) {
+                if (seen[key]) {
+                    return;
+                }
+                var schema = settingsSchema.settings[key];
+                var target = sections[schema.section] || sections.other;
+                target.appendChild(renderEntry({ key: key, value: schema.default || "", enabled: false, inIni: false }));
+            });
+            // Keep the schema order inside each section.
+            order.forEach(function (section) {
+                var keys = (settingsSchema.sectionKeys || {})[section.id] || [];
+                var element = sections[section.id];
+                var rows = Array.prototype.slice.call(element.querySelectorAll(".setting-row"));
+                rows.sort(function (a, b) {
+                    var ia = keys.indexOf(a.dataset.key);
+                    var ib = keys.indexOf(b.dataset.key);
+                    return (ia < 0 ? 999 : ia) - (ib < 0 ? 999 : ib);
+                });
+                rows.forEach(function (row) { element.appendChild(row); });
+            });
+            applyFilter();
+            updateSaveButtons();
+        }
+
+        function loadSchema() {
+            return fetch("/settings/schema")
+                .then(function (response) {
+                    if (!response.ok) {
+                        throw new Error("schema unavailable");
+                    }
+                    return response.json();
+                })
+                .then(function (schema) {
+                    schema.sectionKeys = {};
+                    (schema.sections || []).forEach(function (section) {
+                        schema.sectionKeys[section.id] = section.keys || [];
+                    });
+                    settingsSchema = schema;
+                })
+                .catch(function () {
+                    settingsSchema = { sections: [], settings: {} };
+                });
+        }
+
+        function loadSettings(keepStatus) {
             fetch("/settings/data")
                 .then(function (response) {
                     if (!response.ok) {
@@ -519,15 +862,11 @@
                     return response.json();
                 })
                 .then(function (data) {
-                    var body = document.getElementById("settings-body");
-                    body.innerHTML = "";
-                    (data.entries || []).forEach(function (entry) {
-                        body.appendChild(renderEntry(entry));
-                    });
+                    renderSettings(data.entries || []);
                     updateBluetoothTab(data.entries || []);
                     if (!data.entries || data.entries.length === 0) {
                         setStatus("No settings found in picochess.ini", true);
-                    } else {
+                    } else if (!keepStatus) {
                         setStatus("", false);
                     }
                 })
@@ -536,26 +875,69 @@
                 });
         }
 
+        function showValidationErrors(errors) {
+            var first = null;
+            document.querySelectorAll("#settings-body .setting-row").forEach(function (row) {
+                var message = errors[row.dataset.key];
+                row.classList.toggle("invalid", Boolean(message));
+                row.querySelector(".setting-error").textContent = message || "";
+                if (message) {
+                    row.hidden = false;
+                    row.closest(".settings-section").hidden = false;
+                    row.closest(".settings-section").open = true;
+                    first = first || row;
+                }
+            });
+            if (first) {
+                first.scrollIntoView({ block: "center" });
+                first.querySelector(".setting-value").focus();
+            }
+        }
+
         function saveSettings() {
-            var entries = collectEntries();
+            var changed = changedRows();
+            if (!changed.length) {
+                setStatus("Nothing to save.", false);
+                return;
+            }
+            var applies = { now: [], reload: [], restart: [] };
+            changed.forEach(function (row) {
+                var schema = schemaFor(row.dataset.key);
+                applies[schema ? schema.applies : "restart"].push(row.dataset.key || "custom setting");
+            });
             fetch("/settings/save", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ entries: entries })
+                body: JSON.stringify({ entries: collectEntries() })
             })
                 .then(function (response) {
-                    if (!response.ok) {
-                        throw new Error("Failed to save settings");
-                    }
-                    return response.json();
+                    return response.json().catch(function () { return {}; }).then(function (data) {
+                        if (!response.ok) {
+                            if (data.errors) {
+                                showValidationErrors(data.errors);
+                            }
+                            throw new Error(data.error || "Failed to save settings");
+                        }
+                        return data;
+                    });
                 })
                 .then(function () {
-                    setStatus("Settings saved.", false);
+                    var message = "Saved " + changed.length + " change" + (changed.length > 1 ? "s" : "") + ".";
+                    if (applies.restart.length) {
+                        message += " Restart PicoChess to apply: " + applies.restart.join(", ") + ".";
+                    } else if (applies.reload.length) {
+                        message += " Reload the game page to see it.";
+                    }
+                    setStatus(message, false);
+                    loadSettings(true);
                 })
                 .catch(function (error) {
                     setStatus(error.message, true);
                 });
         }
+
+        document.getElementById("settingsSearch").addEventListener("input", applyFilter);
+        document.getElementById("showAllSettings").addEventListener("change", applyFilter);
 
         document.getElementById("saveBtnTop").addEventListener("click", saveSettings);
         document.getElementById("saveBtn").addEventListener("click", saveSettings);
@@ -636,7 +1018,7 @@
             saveWebAudioBackendSetting();
         });
 
-        loadSettings();
+        loadSchema().then(loadSettings);
     </script>
 </body>
 
