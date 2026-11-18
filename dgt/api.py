@@ -73,6 +73,7 @@ class EventApi:
     EMAIL_LOG = "EVT_EMAIL_LOG"  # User want to send the log file by eMail
     SET_VOICE = "EVT_SET_VOICE"  # User sets a new voice
     SHOW_ENGINENAME = "EVT_SHOW_ENGINENAME"  # show enginename
+    SET_PLAYER = "EVT_SET_PLAYER"  # User changed the player name and/or rating from the web client
     PICOWATCHER = "EVT_PICOWATCHER"  # picowatcher on/off
     PICOCOACH = "EVT_PICOCOACH"  # picocoach on/off
     PICOEXPLORER = "EVT_PICOEXPLORER"  # picoexplorer on/off
@@ -389,6 +390,7 @@ class Event:
     EMAIL_LOG = ClassFactory(EventApi.EMAIL_LOG, [])
     SET_VOICE = ClassFactory(EventApi.SET_VOICE, ["type", "lang", "speaker", "speed"])
     SHOW_ENGINENAME = ClassFactory(EventApi.SHOW_ENGINENAME, ["show_enginename"])
+    SET_PLAYER = ClassFactory(EventApi.SET_PLAYER, ["name", "elo"])
     PICOWATCHER = ClassFactory(EventApi.PICOWATCHER, ["picowatcher"])
     PICOCOACH = ClassFactory(EventApi.PICOCOACH, ["picocoach"])
     PICOEXPLORER = ClassFactory(EventApi.PICOEXPLORER, ["picoexplorer"])

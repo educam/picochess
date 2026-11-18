@@ -70,4 +70,4 @@
 - Salvar grava `board-type`/`dgt-port` no `picochess.ini` **sem reiniciar o computador** (o menu antigo dispara `REBOOT`, que reinicia a máquina inteira) e informa como reiniciar o PicoChess
 - As etapas 2 a 4 reutilizam as ações `/channel` existentes e aplicam as mudanças ao vivo
 - Arquivos: `web_setup.py`, handlers `Setup*` em `server.py`, `web/picoweb/templates/setup.html`, `tests/test_web_setup.py` (20 testes)
-- Bug pré-existente encontrado: trocar de engine faz o rating do jogador exibido voltar ao valor da inicialização (`args.pgn_elo` em `mainloop.update_elo_display`). O valor salvo no `.ini` fica correto
+- Bug pré-existente corrigido: trocar de engine fazia o rating exibido voltar ao valor da inicialização. Agora o `set_player` avisa o backend (evento `SET_PLAYER`)

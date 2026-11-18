@@ -7475,6 +7475,9 @@ class MainLoop:
             self.state.dgtmenu.set_enginename(event.show_enginename)
             await DisplayMsg.show(Message.SHOW_ENGINENAME(show_enginename=event.show_enginename))
 
+        elif isinstance(event, Event.SET_PLAYER):
+            self.set_player(event.name, event.elo)
+
         elif isinstance(event, Event.SAVE_GAME):
             if event.pgn_filename:
                 await self.state.stop_clock()
@@ -7948,6 +7951,20 @@ class MainLoop:
         else:  # Default
             logger.info("event not handled : [%s]", event)
             await asyncio.sleep(0.05)  # balance message queues
+
+    def set_player(self, name: str, elo: str) -> None:
+        """Adopt a player name and rating changed outside the start-up configuration.
+
+        The web client has already persisted them to picochess.ini. Keep the
+        running values in step so later engine changes, Auto Elo levels and
+        rating displays use the new rating instead of the start-up one.
+        """
+        if name:
+            self.args.pgn_user = name
+        if elo:
+            self.args.pgn_elo = elo
+            if elo.isnumeric() and self.args.rating_deviation:
+                self.state.rating = Rating(float(elo), float(self.args.rating_deviation))
 
     async def restart_retro_engine(self):
         """Restart the retro (MAME) engine with the current retro settings and start a new game."""

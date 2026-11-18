@@ -1702,6 +1702,9 @@ class ChannelHandler(ServerRequestHandler):
                 update["user_elo"] = str(elo_int)
             if update:
                 EventHandler.write_to_clients({"event": "SystemInfo", "msg": update})
+                # Let the backend adopt the new values; otherwise the next engine
+                # change shows the start-up rating again.
+                await Observable.fire(Event.SET_PLAYER(name=update.get("user_name", ""), elo=update.get("user_elo", "")))
         elif action == "phone_speaker":
             enabled = self.get_argument("enabled", "false").lower() in ("1", "true", "yes", "on")
             self.shared["web_audio_backend_remote"] = enabled
