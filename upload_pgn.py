@@ -7,10 +7,10 @@ import pam  # type: ignore[import-not-found, import-untyped]
 import tornado.web
 from tornado import escape
 
-from utilities import Observable
+from utilities import Observable, picochess_path
 from dgt.api import Event
 
-UPLOAD_BASE_DIR = "/opt/picochess/games"
+UPLOAD_BASE_DIR = picochess_path("games")
 UPLOAD_DIR = "uploads"
 if "unittest" not in sys.modules:  # do not create directories while running tests
     os.makedirs(os.path.join(UPLOAD_BASE_DIR, UPLOAD_DIR), exist_ok=True)

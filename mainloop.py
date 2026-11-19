@@ -124,7 +124,7 @@ from utilities import (
     get_window_command,
     is_wayland_session,
 )
-from utilities import AsyncRepeatingTimer
+from utilities import AsyncRepeatingTimer, PICOCHESS_HOME, picochess_path
 from legacy_kiosk import stop_legacy_kiosk
 from pgn import Emailer, PgnDisplay, ModeInfo, pgn_has_variations, pgn_variation_review_points
 from server import EventHandler, clear_preserved_mame_history, publish_preserved_mame_history
@@ -734,12 +734,12 @@ class MainLoop:
         Runs the check-update-status.sh script and returns its output as a string.
         Returns None if there was an error running the script.
         """
-        script_path = "/opt/picochess/check-update-status.sh"
+        script_path = picochess_path("check-update-status.sh")
 
         try:
             result = subprocess.run(
                 [script_path],
-                cwd="/opt/picochess",
+                cwd=PICOCHESS_HOME,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,  # capture as string
@@ -759,12 +759,12 @@ class MainLoop:
         Runs the check-git-status.sh script and returns the git status string.
         Returns None if there was an error running the script.
         """
-        script_path = "/opt/picochess/check-git-status.sh"
+        script_path = picochess_path("check-git-status.sh")
 
         try:
             result = subprocess.run(
                 [script_path],
-                cwd="/opt/picochess",
+                cwd=PICOCHESS_HOME,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,  # capture output as string
@@ -7911,7 +7911,7 @@ class MainLoop:
                 sfrom=self.args.smtp_from,
             )
             body = "You probably want to forward this file to a picochess developer ;-)"
-            email_logger.send("Picochess LOG", body, "/opt/picochess/logs/{}".format(self.args.log_file))
+            email_logger.send("Picochess LOG", body, picochess_path("logs", self.args.log_file))
 
         elif isinstance(event, Event.SET_VOICE):
             await DisplayMsg.show(

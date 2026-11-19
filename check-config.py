@@ -33,7 +33,7 @@ def get_value(cfg, key):
 
 
 def main(argv):
-    config_path = Path(argv[1]) if len(argv) > 1 else Path("/opt/picochess/picochess.ini")
+    config_path = Path(argv[1]) if len(argv) > 1 else Path(__file__).resolve().parent / "picochess.ini"
     if not config_path.exists():
         print(f"ERROR: config file not found: {config_path}")
         return 2

@@ -47,6 +47,33 @@ version = "4.4.1"
 
 logger = logging.getLogger(__name__)
 
+# The folder this PicoChess checkout lives in. Raspberry Pi installs use
+# /opt/picochess, but a development checkout can live anywhere.
+PICOCHESS_HOME = os.path.dirname(os.path.abspath(__file__))
+STANDARD_INSTALL_HOME = "/opt/picochess"
+
+
+def picochess_path(*parts: str) -> str:
+    """Return a path inside this PicoChess checkout."""
+    return os.path.join(PICOCHESS_HOME, *parts)
+
+
+def resolve_install_path(path):
+    """Map a path under the standard /opt/picochess install to this checkout.
+
+    picochess.ini files written for a Raspberry Pi refer to engines as
+    /opt/picochess/engines/... . When this checkout lives elsewhere and has the
+    same file, use the checkout's copy. Other paths are returned unchanged.
+    """
+    if not path:
+        return path
+    text = str(path)
+    prefix = STANDARD_INSTALL_HOME + "/"
+    if PICOCHESS_HOME == STANDARD_INSTALL_HOME or not text.startswith(prefix):
+        return path
+    candidate = picochess_path(*text[len(prefix):].split("/"))
+    return candidate if os.path.exists(candidate) else path
+
 _WINDOW_CONTROL_BACKEND_PREFERENCE = "auto"
 
 evt_queue: asyncio.Queue = asyncio.Queue()

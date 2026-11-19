@@ -40,6 +40,7 @@ from uci.engine_provider import EngineProvider
 from theme import ThemeResolver
 from utilities import update_pico_v4
 from utilities import AsyncRepeatingTimer, DisplayMsg, version, set_window_control_backend_preference
+from utilities import PICOCHESS_HOME, resolve_install_path
 from pgn import Emailer, PgnDisplay, ModeInfo
 from server import WebDisplay, WebServer, WebVr, EventHandler
 from picotalker import PicoTalkerDisplay
@@ -134,8 +135,16 @@ async def main() -> None:
     fischer_inc = 0
     login = ""
 
+    # logs/, books/, games/ and other resources are relative to the checkout,
+    # so PicoChess can be started from any folder.
+    if os.path.abspath(os.getcwd()) != PICOCHESS_HOME:
+        os.chdir(PICOCHESS_HOME)
+
     config = Configuration()
     args, unknown = config._args, config.unknown
+    # An ini written for /opt/picochess still finds this checkout's engines.
+    args.engine = resolve_install_path(args.engine)
+    args.tutor_engine = resolve_install_path(args.tutor_engine)
     set_window_control_backend_preference(args.window_control_backend)
 
     # Enable logging

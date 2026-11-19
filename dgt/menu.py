@@ -27,7 +27,15 @@ from typing import Dict, List, Set
 from pgn import ModeInfo
 import chess  # type: ignore
 from timecontrol import TimeControl
-from utilities import Observable, DispatchDgt, get_internal_ip, get_tags, version, write_picochess_ini
+from utilities import (
+    Observable,
+    DispatchDgt,
+    get_internal_ip,
+    get_tags,
+    picochess_path,
+    version,
+    write_picochess_ini,
+)
 from dgt.util import (
     TimeMode,
     TimeModeLoop,
@@ -3697,7 +3705,7 @@ class DgtMenu(object):
             text = await self._fire_dispatchdgt(self.dgttranslate.text("B10_ok"))
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/wifi-hotspot-connect"],
+                    ["sudo", "-n", picochess_path("wifi-hotspot-connect")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     universal_newlines=True,
@@ -3717,7 +3725,7 @@ class DgtMenu(object):
             text = await self._fire_dispatchdgt(self.dgttranslate.text("B10_ok"))
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/pair-phone"],
+                    ["sudo", "-n", picochess_path("pair-phone")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     universal_newlines=True,
@@ -3729,7 +3737,7 @@ class DgtMenu(object):
             text = await self._fire_dispatchdgt(self.dgttranslate.text("B10_ok"))
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/Fix_bluetooth.sh"],
+                    ["sudo", "-n", picochess_path("Fix_bluetooth.sh")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     universal_newlines=True,
@@ -3741,7 +3749,7 @@ class DgtMenu(object):
             text = await self._fire_dispatchdgt(self.dgttranslate.text("B10_ok"))
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/reconnect-dgt-bt.sh"],
+                    ["sudo", "-n", picochess_path("reconnect-dgt-bt.sh")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                     universal_newlines=True,

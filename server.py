@@ -52,6 +52,7 @@ from utilities import (
     ensure_important_headers,
     get_opening_books,
     write_picochess_ini,
+    picochess_path,
     version as pico_version,
 )
 from audio_volume import set_system_volume
@@ -1833,7 +1834,7 @@ class ChannelHandler(ServerRequestHandler):
         elif action == "wifi_hotspot":
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/wifi-hotspot-connect"],
+                    ["sudo", "-n", picochess_path("wifi-hotspot-connect")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
@@ -1842,7 +1843,7 @@ class ChannelHandler(ServerRequestHandler):
         elif action == "bt_toggle":
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/pair-phone"],
+                    ["sudo", "-n", picochess_path("pair-phone")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
@@ -1851,7 +1852,7 @@ class ChannelHandler(ServerRequestHandler):
         elif action == "bt_fix":
             try:
                 subprocess.Popen(
-                    ["sudo", "-n", "/opt/picochess/Fix_bluetooth.sh"],
+                    ["sudo", "-n", picochess_path("Fix_bluetooth.sh")],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
@@ -3103,16 +3104,16 @@ class SettingsActionHandler(ServerRequestHandler):
             self.write({"error": "Unknown action"})
             return
         if action == "wifi-hotspot":
-            cmd = ["sudo", "-n", "/opt/picochess/wifi-hotspot-connect"]
+            cmd = ["sudo", "-n", picochess_path("wifi-hotspot-connect")]
             timeout = 30
         elif action == "bt-pair":
-            cmd = ["sudo", "-n", "/opt/picochess/pair-phone"]
+            cmd = ["sudo", "-n", picochess_path("pair-phone")]
             timeout = 50
         elif action == "bt-fix":
-            cmd = ["sudo", "-n", "/opt/picochess/Fix_bluetooth.sh"]
+            cmd = ["sudo", "-n", picochess_path("Fix_bluetooth.sh")]
             timeout = 60
         else:  # bt-reconnect
-            cmd = ["sudo", "-n", "/opt/picochess/reconnect-dgt-bt.sh"]
+            cmd = ["sudo", "-n", picochess_path("reconnect-dgt-bt.sh")]
             timeout = 30
         loop = asyncio.get_event_loop()
         try:

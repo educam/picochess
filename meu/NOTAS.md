@@ -50,7 +50,7 @@
 ### C. Menu web "nativo"
 - Manter o menu estilo relógio para fidelidade, mas oferecer um painel com listas: engines (com busca e agrupado por fabricante), modos, tempo e posição.
 
-### D. Portabilidade / rodar de qualquer pasta
+### D. Portabilidade / rodar de qualquer pasta ✅ implementado em `meu-dev`
 - Resolver caminhos relativos à raiz do repo (por exemplo, um `PICOCHESS_HOME`) em vez de `/opt/picochess`.
 - Um `run-local` oficial (como este script) para desenvolvimento em laptop.
 
@@ -78,3 +78,11 @@
 - Ao salvar, o servidor valida tipos e opções (inteiro, número, true/false, listas) e devolve erro por chave; o arquivo não é alterado se houver erro
 - O botão mostra quantas mudanças existem, e a mensagem final lista o que exige reinício
 - Esquema gerado do `configuration.py` (`settings_schema.py`, rota `/settings/schema`). Testes em `tests/test_settings_schema.py`, que também validam os `.ini` de exemplo
+
+## Item D: rodar de qualquer pasta (implementado)
+- `picochess.py` muda sozinho para a pasta do checkout ao iniciar (logs/, books/, games/ são relativos)
+- Caminhos `/opt/picochess/...` de `engine` e `tutor-engine` no `.ini` são mapeados para esta pasta quando o arquivo existe aqui (`utilities.resolve_install_path`)
+- Scripts chamados pelo código (status do git e de atualização, Wi-Fi, Bluetooth) e a pasta de upload de PGN usam `utilities.picochess_path(...)`
+- Antes, o upload de PGN criava `/opt/picochess/games` mesmo rodando de outra pasta
+- Não alterado de propósito: instalador e atualização (`install-picochess.sh`, `update_pico_v4`), que são feitos para o Pi em /opt/picochess; `SyzygyPath` dentro dos `.uci` dos pacotes de engines
+- `meu/run-local.sh` agora só ajusta a porta e usa `venv/` (convenção do projeto)
