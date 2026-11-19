@@ -54,7 +54,7 @@
 - Resolver caminhos relativos à raiz do repo (por exemplo, um `PICOCHESS_HOME`) em vez de `/opt/picochess`.
 - Um `run-local` oficial (como este script) para desenvolvimento em laptop.
 
-### E. Modo "simulador de e-board" para desenvolvimento
+### E. Modo "simulador de e-board" para desenvolvimento ✅ implementado em `meu-dev`
 - Um `board-type = virtual` que aceita FENs/peças por WebSocket ou CLI, imitando o fluxo do DGT (levantar e colocar peça, set pieces, takeback físico). Permitiria testar as regras de `NEW_GAME`, takeback e Tutor "lift" sem hardware.
 
 ## Próximos passos sugeridos
@@ -91,3 +91,11 @@
 - Correção do diagnóstico: o menu moderno (engrenagem ⚙ ao lado das abas) já tinha listas de engines por fabricante, níveis, modos, tempo e posição. O botão ☰ do topo abre o menu estilo relógio
 - O que faltava, e foi feito: um bloco "🔍 Search" em Menu → Engine que busca em todos os catálogos (Modern, Retro, Special) por nome, fabricante, grupo ou Elo; Enter escolhe o primeiro resultado; o clique abre os níveis como na lista normal
 - O rótulo "Search" ainda não está traduzido (usa o texto padrão em inglês)
+
+## Item E: simulador de tabuleiro DGT (implementado)
+- `tools/dgt_simulator.py` cria uma porta serial virtual (`/tmp/dgt-sim`) que fala o protocolo DGT. O PicoChess usa o driver DGT de verdade, sem nenhuma mudança no código dele
+- Página em http://localhost:8081: clicar numa peça a levanta, clicar numa casa a coloca. Também tem o campo "Make a move" (com captura, roque, en passant e promoção), "Copy PicoChess position", FEN e paleta de peças
+- Escuta o websocket do PicoChess: quando a engine joga, destaca o lance e oferece "Make this move on the board" (o papel dos LEDs)
+- Testado: handshake, lance do usuário vindo do tabuleiro, lance da engine executado no tabuleiro, "wrong fen" quando as peças estão fora do lugar, reconexão depois de reiniciar o simulador
+- Limites: sem relógio DGT simulado (o PicoChess usa o relógio web), só protocolo DGT, só Linux/macOS
+- Guia: `docs/dgt-simulator.md`
