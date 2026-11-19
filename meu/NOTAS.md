@@ -47,7 +47,7 @@
 - Gerar um esquema a partir do `configuration.py` (argparse já tem `help`, `choices` e `default`) e renderizar por seções: Tabuleiro, Engine, Jogo, Tutor, Áudio, Web, Avançado.
 - Esconder chaves de exemplo e não habilitadas, validar no save (já existe `check-config.py`) e indicar quais mudanças pedem reinício.
 
-### C. Menu web "nativo"
+### C. Menu web "nativo" ✅ (busca de engines) implementado em `meu-dev`
 - Manter o menu estilo relógio para fidelidade, mas oferecer um painel com listas: engines (com busca e agrupado por fabricante), modos, tempo e posição.
 
 ### D. Portabilidade / rodar de qualquer pasta ✅ implementado em `meu-dev`
@@ -86,3 +86,8 @@
 - Antes, o upload de PGN criava `/opt/picochess/games` mesmo rodando de outra pasta
 - Não alterado de propósito: instalador e atualização (`install-picochess.sh`, `update_pico_v4`), que são feitos para o Pi em /opt/picochess; `SyzygyPath` dentro dos `.uci` dos pacotes de engines
 - `meu/run-local.sh` agora só ajusta a porta e usa `venv/` (convenção do projeto)
+
+## Item C: busca de engines no menu ⚙ (implementado)
+- Correção do diagnóstico: o menu moderno (engrenagem ⚙ ao lado das abas) já tinha listas de engines por fabricante, níveis, modos, tempo e posição. O botão ☰ do topo abre o menu estilo relógio
+- O que faltava, e foi feito: um bloco "🔍 Search" em Menu → Engine que busca em todos os catálogos (Modern, Retro, Special) por nome, fabricante, grupo ou Elo; Enter escolhe o primeiro resultado; o clique abre os níveis como na lista normal
+- O rótulo "Search" ainda não está traduzido (usa o texto padrão em inglês)

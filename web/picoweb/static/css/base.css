@@ -2652,3 +2652,22 @@ html[data-theme="dark"] .promotion-overlay square {
 .pico-col-back:hover {
     background: rgba(255, 255, 255, 0.08);
 }
+
+/* Engine search in the web menu */
+.pico-engine-search {
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0 0 8px;
+    padding: 0.6rem 0.8rem;
+    font-size: 1rem;
+    color: inherit;
+    background: rgba(128, 128, 128, 0.08);
+    border: 1px solid rgba(128, 128, 128, 0.4);
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.pico-engine-search:focus {
+    outline: none;
+    border-color: rgba(13, 110, 253, 0.7);
+}

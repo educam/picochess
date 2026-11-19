@@ -24,7 +24,7 @@
     {% end %}
     <link rel="stylesheet" href="/static/css/select.dataTables.css" />
     <link rel="stylesheet" href="/static/css/dataTables.bootstrap5.min.css" />
-    <link rel="stylesheet" href="/static/css/base.css?v=15" />
+    <link rel="stylesheet" href="/static/css/base.css?v=16" />
     <link rel="stylesheet" href="/static/css/responsive/mobile.css" />
     <link rel="stylesheet" href="/static/css/responsive/desktop.css" />
     <style>
@@ -2380,6 +2380,7 @@
                 { icon: '💻', labelKey: 'modern',    fallbackLabel: 'Modern',     value: 'modern'    },
                 { icon: '🕰️', labelKey: 'retro',     fallbackLabel: 'Retro',      value: 'retro'     },
                 { icon: '🧩', labelKey: 'favorites', fallbackLabel: 'Special',    value: 'favorites' },
+                { icon: '🔍', labelKey: 'search',    fallbackLabel: 'Search',     value: 'search'    },
                 { icon: '↕️', labelKey: 'sort',      fallbackLabel: 'Sort Order', value: 'sort'      },
                 { icon: 'ℹ️', labelKey: 'info',      fallbackLabel: 'Engine Info', value: 'info'     }
             ];
@@ -2452,6 +2453,8 @@
                             navigateTo(showEngineSort);
                         } else if (cat.value === 'info') {
                             navigateTo(showEngineInfo);
+                        } else if (cat.value === 'search') {
+                            navigateTo(openEngineSearch);
                         } else {
                             navigateTo(function() { openEngineCat(cat.value); });
                         }
@@ -2471,6 +2474,7 @@
                 setOverlayPath('Engine > ' + infoLabel);
                 document.getElementById('ovl-engine-cat-grid').style.display = 'none';
                 document.getElementById('ovl-engine-cat-back').style.display = '';
+                _setEngineSearchVisible(false);
                 var lbl = document.getElementById('ovl-engine-sub-label');
                 lbl.style.display = '';
                 lbl.textContent = 'ℹ️ ' + infoLabel;
@@ -2539,6 +2543,7 @@
                 setOverlayPath('Engine > ' + sortLabel);
                 document.getElementById('ovl-engine-cat-grid').style.display = 'none';
                 document.getElementById('ovl-engine-cat-back').style.display = '';
+                _setEngineSearchVisible(false);
                 var lbl = document.getElementById('ovl-engine-sub-label');
                 lbl.style.display = '';
                 lbl.textContent = '↕️ ' + sortLabel;
@@ -2574,6 +2579,7 @@
                 setOverlayPath('Engine > ' + _engineCatLabel(catDef));
                 document.getElementById('ovl-engine-cat-grid').style.display = 'none';
                 document.getElementById('ovl-engine-cat-back').style.display = '';
+                _setEngineSearchVisible(false);
                 var lbl = document.getElementById('ovl-engine-sub-label');
                 lbl.style.display = '';
                 lbl.textContent = catDef.icon + ' ' + _engineCatLabel(catDef);
@@ -2612,10 +2618,116 @@
                     .catch(function() { listEl.innerHTML = '<div style="opacity:0.5;font-size:0.8rem;padding:0.3rem;">Failed to load</div>'; });
             }
 
+            /* ── engine search ───────────────────────── */
+            var _engSearchBound = false;
+
+            function _setEngineSearchVisible(visible) {
+                var input = document.getElementById('ovl-engine-search');
+                if (input) input.style.display = visible ? '' : 'none';
+            }
+
+            function _engineSearchText(eng) {
+                var catDef = _engCatDefs.find(function(d) { return d.value === (eng.category || 'modern'); });
+                return [eng.name || '', eng.manufacturer || '', catDef ? _engineCatLabel(catDef) : '', eng.elo || '']
+                    .join(' ').toLowerCase();
+            }
+
+            function _renderEngineSearch(query) {
+                var listEl = document.getElementById('ovl-engine-list');
+                var terms = String(query || '').toLowerCase().split(/\s+/).filter(Boolean);
+                var matches = _engAllData.filter(function(eng) {
+                    var text = _engineSearchText(eng);
+                    return terms.every(function(term) { return text.indexOf(term) >= 0; });
+                });
+                listEl.innerHTML = '';
+                document.getElementById('ovl-level-col').style.display = 'none';
+                document.getElementById('ovl-level-list').innerHTML = '';
+                if (!matches.length) {
+                    var none = document.createElement('div');
+                    none.style.cssText = 'opacity:0.5;font-size:0.8rem;padding:0.3rem;';
+                    none.textContent = terms.length ? 'No engine matches "' + query + '"' : 'No engines found';
+                    listEl.appendChild(none);
+                    return matches;
+                }
+                matches.slice(0, 80).forEach(function(eng) {
+                    var btn = document.createElement('button');
+                    btn.className = 'pico-picker-item pico-engine-picker-item';
+                    var nameEl = document.createElement('strong');
+                    nameEl.textContent = eng.name || eng.file;
+                    btn.appendChild(nameEl);
+                    var catDef = _engCatDefs.find(function(d) { return d.value === (eng.category || 'modern'); });
+                    var subEl = document.createElement('span');
+                    subEl.className = 'picker-sub';
+                    subEl.textContent = [catDef ? _engineCatLabel(catDef) : '', eng.manufacturer || '', eng.elo ? 'Elo ' + eng.elo : '']
+                        .filter(Boolean).join(' · ');
+                    btn.appendChild(subEl);
+                    var currentCategory = (window._picoCurrentSettings || {}).engine_category || '';
+                    if (_isCurrentEngine(eng) && (!currentCategory || (eng.category || 'modern') === currentCategory)) {
+                        btn.classList.add('selected');
+                    }
+                    btn.addEventListener('click', function() {
+                        listEl.querySelectorAll('.pico-picker-item').forEach(function(el) { el.classList.remove('selected'); });
+                        btn.classList.add('selected');
+                        populateLevels(eng.file, eng.levels);
+                    });
+                    listEl.appendChild(btn);
+                });
+                if (matches.length > 80) {
+                    var more = document.createElement('div');
+                    more.style.cssText = 'opacity:0.5;font-size:0.8rem;padding:0.3rem;';
+                    more.textContent = (matches.length - 80) + ' more: type more letters';
+                    listEl.appendChild(more);
+                }
+                return matches;
+            }
+
+            function openEngineSearch() {
+                _engCurrentCat = 'search';
+                var catDef = _engCatDefs.find(function(d) { return d.value === 'search'; });
+                setOverlayPath('Engine > ' + _engineCatLabel(catDef));
+                document.getElementById('ovl-engine-cat-grid').style.display = 'none';
+                document.getElementById('ovl-engine-cat-back').style.display = '';
+                var lbl = document.getElementById('ovl-engine-sub-label');
+                lbl.style.display = '';
+                lbl.textContent = catDef.icon + ' ' + _engineCatLabel(catDef);
+                document.getElementById('ovl-engine-sub-panel').style.display = 'flex';
+                var input = document.getElementById('ovl-engine-search');
+                _setEngineSearchVisible(true);
+                input.value = '';
+                if (!_engSearchBound) {
+                    _engSearchBound = true;
+                    input.addEventListener('input', function() { _renderEngineSearch(input.value); });
+                    input.addEventListener('keydown', function(ev) {
+                        if (ev.key !== 'Enter') return;
+                        ev.preventDefault();
+                        var first = document.querySelector('#ovl-engine-list .pico-picker-item');
+                        if (first) first.click();
+                    });
+                }
+                var listEl = document.getElementById('ovl-engine-list');
+                listEl.innerHTML = '<div style="opacity:0.5;font-size:0.8rem;padding:0.3rem;">Loading…</div>';
+                document.getElementById('ovl-level-col').style.display = 'none';
+                Promise.all([
+                    fetch('/info?action=get_current_settings').then(function(r) { return r.json(); }),
+                    fetch('/info?action=get_engines').then(function(r) { return r.json(); })
+                ])
+                    .then(function(results) {
+                        window._picoCurrentSettings = results[0] || {};
+                        applyMenuText(window._picoCurrentSettings);
+                        var data = results[1] || {};
+                        _engAllData = data.engines || [];
+                        if (data.engine_menu_labels) setCurrentSetting('engine_menu_labels', data.engine_menu_labels);
+                        _renderEngineSearch(input.value);
+                        input.focus();
+                    })
+                    .catch(function() { listEl.innerHTML = '<div style="opacity:0.5;font-size:0.8rem;padding:0.3rem;">Failed to load</div>'; });
+            }
+
             function showEngine() {
                 showSubpanel('overlay-engine');
                 document.getElementById('ovl-engine-sub-panel').style.display = 'none';
                 document.getElementById('ovl-engine-cat-back').style.display = 'none';
+                _setEngineSearchVisible(false);
                 document.getElementById('ovl-engine-sub-label').style.display = 'none';
                 document.getElementById('ovl-engine-cat-grid').style.display = '';
                 renderEngineCatTiles();
@@ -4548,6 +4660,8 @@
                 <div id="ovl-engine-cat-grid"></div>
                 <button class="pico-col-back" id="ovl-engine-cat-back" style="display:none;">‹ Back</button>
                 <div class="pico-sub-grid-label" id="ovl-engine-sub-label" style="display:none;"></div>
+                <input type="search" id="ovl-engine-search" class="pico-engine-search" style="display:none;"
+                       placeholder="Engine name, maker or group" aria-label="Search engines" autocomplete="off">
                 <div style="display:none; flex:1; gap:10px; min-height:0;" id="ovl-engine-sub-panel">
                     <div class="pico-picker-col" id="ovl-engine-col" style="flex:1; overflow-y:auto;">
                         <div id="ovl-engine-list"></div>
