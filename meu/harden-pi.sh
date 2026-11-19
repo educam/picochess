@@ -118,7 +118,10 @@ report() {
     section "Plano para --apply"
     echo "  - desligar os serviços listados acima"
     echo "  - SSH: sem login de root, sem X11, no máximo 3 tentativas$( $SSH_KEYS_ONLY && echo ', só com chave')"
-    echo "  - firewall (ufw): bloquear entrada; liberar só das redes privadas: 22 (SSH), $(web_port) e 8080 (PicoChess), 7778 (aba GAMES)"
+    local web
+    web=$(web_port)
+    [ "$web" = 8080 ] && web="8080" || web="$web e 8080"
+    echo "  - firewall (ufw): bloquear entrada; liberar só das redes privadas: 22 (SSH), $web (PicoChess), 7778 (aba GAMES)"
     echo "  - fail2ban: bloquear quem errar a senha SSH várias vezes"
     echo "  - atualizações automáticas de segurança (unattended-upgrades)"
     echo "  - ajustes de rede do kernel (sem redirects, sem source routing, rp_filter)"
